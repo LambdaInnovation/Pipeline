@@ -1,0 +1,16 @@
+[
+{
+  "modid": "pipeline",
+  "name": "Pipeline Mod",
+  "description": "A graphic pipeline experiment mod.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["WeAthFolD"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
