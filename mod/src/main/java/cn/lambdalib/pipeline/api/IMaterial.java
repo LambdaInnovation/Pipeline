@@ -6,12 +6,17 @@ package cn.lambdalib.pipeline.api;
  */
 public interface IMaterial {
 
-    int getShaderID();
+    int getProgramID();
 
     /**
      * Invoked just before a draw call is to be emitted. The material shall now upload relevant data/states
      *  to GL, as well as update vertex format.
      */
-    void beforeDrawCall();
+    void beforeDrawCall(int vertexVBO, int instanceVBO);
+
+    /**
+     * @return How many floats used per instance data
+     */
+    int getFloatsPerInstance();
 
 }

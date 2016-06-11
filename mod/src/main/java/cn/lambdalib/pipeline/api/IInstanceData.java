@@ -9,6 +9,4 @@ public interface IInstanceData {
 
     void upload(FloatBuffer buffer);
 
-    int getFloatsPerInstance();
-
 }

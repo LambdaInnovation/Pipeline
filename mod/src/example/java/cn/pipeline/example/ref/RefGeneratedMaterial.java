@@ -3,6 +3,9 @@ package cn.pipeline.example.ref;
 import cn.lambdalib.pipeline.api.IInstanceData;
 import cn.lambdalib.pipeline.api.IMaterial;
 import cn.lambdalib.pipeline.api.IMesh;
+import cn.lambdalib.pipeline.core.GLBuffer;
+import cn.lambdalib.pipeline.core.Lazy;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
@@ -10,44 +13,76 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL13.*;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
-import static org.lwjgl.opengl.GL30.*;
-import static org.lwjgl.opengl.GL31.*;
 import static org.lwjgl.opengl.GL33.*;
 
 public class RefGeneratedMaterial implements IMaterial {
 
-    private final int shaderID;
+    public static Mesh.Vertex newVertex(Vector3f position, Vector2f uv) {
+        return new Mesh.Vertex(position, uv);
+    }
 
-    public RefGeneratedMaterial(int shaderID) {
-        this.shaderID = shaderID;
+    public static Mesh newMesh(Mesh.Vertex[] vertices, byte[] indices) {
+        return new Mesh(vertices, indices);
+    }
+
+    public static InstanceData newInstance(Vector3f color, Vector3f offset, float scale) {
+        return new InstanceData(color, offset, scale);
+    }
+
+
+    private final int programID;
+
+    public RefGeneratedMaterial(int programID) {
+        this.programID = programID;
     }
 
     @Override
-    public int getShaderID() {
-        return shaderID;
+    public int getProgramID() {
+        return programID;
     }
 
     @Override
-    public void beforeDrawCall() {
+    public void beforeDrawCall(int vbo, int instanceVbo) {
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glEnableVertexAttribArray(0);
         glEnableVertexAttribArray(1);
         glEnableVertexAttribArray(2);
+        glEnableVertexAttribArray(3);
+        glEnableVertexAttribArray(4);
 
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, 32, 0);
-        glVertexAttribPointer(1, 2, GL_FLOAT, false, 32, 12);
-        glVertexAttribPointer(2, 3, GL_FLOAT, false, 32, 20);
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, 20, 0);
+        glVertexAttribDivisor(0, 0);
+        glVertexAttribPointer(1, 2, GL_FLOAT, false, 20, 12);
+        glVertexAttribDivisor(1, 0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, instanceVbo);
+        glVertexAttribPointer(2, 3, GL_FLOAT, false, 28, 0);
+        glVertexAttribDivisor(2, 1);
+        glVertexAttribPointer(3, 3, GL_FLOAT, false, 28, 12);
+        glVertexAttribDivisor(3, 1);
+        glVertexAttribPointer(4, 1, GL_FLOAT, false, 28, 24);
+        glVertexAttribDivisor(4, 1);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
+    @Override
+    public int getFloatsPerInstance() {
+        return 7;
+    }
 
     public static class Mesh implements IMesh {
 
         private final Vertex[] vertices;
-        private final int[] indices;
+        private final byte[] indices;
 
-        public class Vertex {
+        private Lazy<GLBuffer>
+            vertexBuffer = new Lazy<>(),
+            indexBuffer = new Lazy<>();
+
+        public static class Vertex {
             public final Vector3f position;
             public final Vector2f uv;
 
@@ -62,33 +97,14 @@ public class RefGeneratedMaterial implements IMaterial {
             }
         }
 
-        public Mesh(Vertex[] vertices, int[] indices) {
+        public Mesh(Vertex[] vertices, byte[] indices) {
             this.vertices = vertices;
             this.indices = indices;
         }
 
         @Override
-        public void uploadVBO(FloatBuffer buffer) {
-            for (Vertex v : vertices) {
-                v.position.store(buffer);
-                v.uv.store(buffer);
-            }
-        }
-
-        @Override
-        public void uploadIBO(ByteBuffer buffer) {
-            if (vertices.length < Byte.MAX_VALUE) {
-                for (int i : indices) buffer.put((byte) i);
-            } else if (vertices.length < Short.MAX_VALUE) {
-                for (int i : indices) buffer.putShort((short) i);
-            } else {
-                for (int i : indices) buffer.putInt(i);
-            }
-        }
-
-        @Override
-        public int getFloatsPerVertex() {
-            return 5;
+        public int getIndicesCount() {
+            return indices.length;
         }
 
         @Override
@@ -97,35 +113,70 @@ public class RefGeneratedMaterial implements IMaterial {
         }
 
         @Override
-        public int getIndicesBytes() {
-            if (vertices.length < Byte.MAX_VALUE) {
-                return Byte.BYTES;
-            } else if (vertices.length < Short.MAX_VALUE) {
-                return Short.BYTES;
-            } else {
-                return Integer.BYTES;
-            }
+        public int getVBO() {
+            return vertexBuffer.get(() -> {
+                GLBuffer vbo = GLBuffer.create();
+                glBindBuffer(GL_ARRAY_BUFFER, vbo.getID());
+
+                FloatBuffer buf = BufferUtils.createFloatBuffer(vertices.length * 5);
+                for (Vertex v : vertices) {
+                    v.position.store(buf);
+                    v.uv.store(buf);
+                }
+                buf.flip();
+
+                glBufferData(GL_ARRAY_BUFFER, buf, GL_STATIC_DRAW);
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+                return vbo;
+            }).getID();
+        }
+
+        @Override
+        public int getIBO() {
+            return indexBuffer.get(() -> {
+                GLBuffer ibo = GLBuffer.create();
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo.getID());
+
+                ByteBuffer buf = BufferUtils.createByteBuffer(indices.length);
+                buf.put(indices);
+                buf.flip();
+
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, buf, GL_STATIC_DRAW);
+
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+                return ibo;
+            }).getID();
+        }
+
+        @Override
+        public int getIBO(int subIndex) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getPrimitiveType() {
+            return GL_UNSIGNED_BYTE;
         }
     }
 
     public static class InstanceData implements IInstanceData {
 
         private final Vector3f color, offset;
+        private final float scale;
 
-        public InstanceData(Vector3f color, Vector3f offset) {
+        public InstanceData(Vector3f color, Vector3f offset, float scale) {
             this.color = color;
             this.offset = offset;
+            this.scale = scale;
         }
 
         @Override
         public void upload(FloatBuffer buffer) {
             color.store(buffer);
             offset.store(buffer);
-        }
-
-        @Override
-        public int getFloatsPerInstance() {
-            return 6;
+            buffer.put(scale);
         }
 
     }
