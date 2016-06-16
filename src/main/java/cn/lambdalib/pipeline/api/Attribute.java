@@ -26,7 +26,13 @@ public class Attribute {
     }
 
     public enum AttributeType {
-        Vec2, Vec3, Float
+        Float(1), Vec2(2), Vec3(3);
+
+        public final int dimension;
+
+        AttributeType(int dimension) {
+            this.dimension = dimension;
+        }
     }
 
     public final Layout layout;

@@ -1,10 +1,13 @@
 package cn.lambdalib.pipeline.core;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
 import net.minecraft.util.ResourceLocation;
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 import static org.lwjgl.opengl.GL11.*;
@@ -26,6 +29,14 @@ public class Utils {
             return Preconditions.checkNotNull(Utils.class.getResourceAsStream("/assets/" + domain + "/" + path), "Invalid resource " + res);
         } catch(Exception e) {
             throw new RuntimeException("Invalid resource " + res, e);
+        }
+    }
+
+    public static String toString(ResourceLocation res) {
+        try {
+            return IOUtils.toString(getResourceStream(res));
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
         }
     }
 
