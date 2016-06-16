@@ -8,6 +8,7 @@ import com.google.common.base.Preconditions;
 import org.apache.commons.lang3.tuple.Pair;
 import org.lwjgl.BufferUtils;
 
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
@@ -19,9 +20,7 @@ import java.util.function.Supplier;
 
 import static cn.lambdalib.pipeline.core.Utils.*;
 import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
-import static org.lwjgl.opengl.GL20.glGetAttribLocation;
-import static org.lwjgl.opengl.GL30.glBindVertexArray;
+import static org.lwjgl.opengl.GL20.*;
 
 public class Material {
 
@@ -30,8 +29,6 @@ public class Material {
      * Create a material from given `ShaderProgram`. The Material shall
      *  own the program, and any modification to the program's execution environment
      *  (e.g. uniforms) without using this `Material` yields undefined results. </p>
-     *
-     *  TODO: Auto determine the data type in LayoutMapping.
      */
     public static Material load(ShaderProgram program, LayoutMapping mapping) {
         return new Material(program, mapping);
@@ -48,12 +45,37 @@ public class Material {
     private Material(ShaderProgram program, LayoutMapping mapping) {
         this.program = program;
 
-        for (Entry<String, Pair<LayoutType, AttributeType>> entry : mapping.mappings.entrySet()) {
-            String name = entry.getKey();
-            LayoutType layoutType = entry.getValue().getLeft();
-            AttributeType attrType = entry.getValue().getRight();
+        int attributeCount = glGetProgrami(program.getProgramID(), GL_ACTIVE_ATTRIBUTES);
+        ByteBuffer nameBuffer = BufferUtils.createByteBuffer(
+                glGetProgrami(program.getProgramID(), GL_ACTIVE_ATTRIBUTE_MAX_LENGTH));
+        IntBuffer sizeBuffer = BufferUtils.createIntBuffer(1),
+                typeBuffer = BufferUtils.createIntBuffer(1),
+                lenBuffer = BufferUtils.createIntBuffer(1);
+
+        for (int i = 0; i < attributeCount; ++i) {
+            nameBuffer.clear();
+            typeBuffer.clear();
+            sizeBuffer.clear();
+            lenBuffer.clear();
+
+            glGetActiveAttrib(program.getProgramID(), i, lenBuffer, sizeBuffer, typeBuffer, nameBuffer);
+
+            String name; {
+                StringBuilder sb = new StringBuilder();
+                int len = lenBuffer.get();
+                while (len --> 0) {
+                    sb.append((char) nameBuffer.get());
+                }
+                name = sb.toString();
+            }
 
             int index = glGetAttribLocation(program.getProgramID(), name);
+            int type = typeBuffer.get();
+
+            LayoutType layoutType = Preconditions.checkNotNull(mapping.mappings.get(name),
+                    "Attribute " + name + " 's input not defined");
+            AttributeType attrType = AttributeType.fromGL(type);
+
             Preconditions.checkState(index != -1, "Invalid attribute: " + name);
 
             List<Layout> subList;
@@ -183,11 +205,11 @@ public class Material {
 
     public static class LayoutMapping {
 
-        final Map<String, Pair<LayoutType, AttributeType>> mappings = new HashMap<>();
+        final Map<String, LayoutType> mappings = new HashMap<>();
 
-        public static LayoutMapping create(Pair<String, Pair<LayoutType, AttributeType>>... input) {
+        public static LayoutMapping create(Pair<String, LayoutType>... input) {
             LayoutMapping ret = new LayoutMapping();
-            for (Pair<String, Pair<LayoutType, AttributeType>> p : input) {
+            for (Pair<String, LayoutType> p : input) {
                 ret.mappings.put(p.getLeft(), p.getRight());
             }
             return ret;

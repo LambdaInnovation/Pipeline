@@ -33,12 +33,12 @@ public class GuiRenderHook {
                     Utils.toString(new ResourceLocation("pipex:shaders/ref.vert")),
                     Utils.toString(new ResourceLocation("pipex:shaders/ref.frag"))),
             LayoutMapping.create(
-                    of("position", of(LayoutType.VERTEX, AttributeType.Vec3)),
-                    of("uv", of(LayoutType.VERTEX, AttributeType.Vec2)),
-                    of("color", of(LayoutType.VERTEX, AttributeType.Vec3)),
+                    of("position", LayoutType.VERTEX),
+                    of("uv", LayoutType.VERTEX),
+                    of("color", LayoutType.VERTEX),
 
-                    of("offset", of(LayoutType.INSTANCE, AttributeType.Vec3)),
-                    of("scale", of(LayoutType.INSTANCE, AttributeType.Float))
+                    of("offset", LayoutType.INSTANCE),
+                    of("scale", LayoutType.INSTANCE)
             )
     );
 
