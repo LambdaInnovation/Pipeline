@@ -182,10 +182,6 @@ public class Material {
             this.values = values;
         }
 
-        Material _enclosingMaterial() {
-            return Material.this;
-        }
-
     }
 
     public class Instance {
@@ -194,10 +190,6 @@ public class Material {
 
         private Instance(float[] values) {
             this.values = values;
-        }
-
-        Material _enclosingMaterial() {
-            return Material.this;
         }
 
     }

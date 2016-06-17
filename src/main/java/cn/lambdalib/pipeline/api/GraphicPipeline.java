@@ -27,19 +27,27 @@ import static org.lwjgl.opengl.GL33.glVertexAttribDivisor;
 
 public class GraphicPipeline {
 
-    private Map<Material, Multimap<Mesh, Instance>> drawCalls = new HashMap<>();
+    private Map<Material, Multimap<SubGroup, Instance>> drawCalls = new HashMap<>();
 
     public void draw(Material mat, Mesh mesh, Instance instance) {
+        put(mat, new SubGroup(mesh, true, -1), instance);
+    }
+
+    public void draw(Material mat, Mesh mesh, Instance instance, int subMeshIndex) {
+        put(mat, new SubGroup(mesh, false, subMeshIndex), instance);
+    }
+
+    private void put(Material mat, SubGroup group, Instance instance) {
         if (!drawCalls.containsKey(mat)) {
             drawCalls.put(mat, ArrayListMultimap.create());
         }
 
-        drawCalls.get(mat).put(mesh, instance);
+        drawCalls.get(mat).put(group, instance);
     }
 
     public void flush() {
         for (Material mat : drawCalls.keySet()) {
-            Multimap<Mesh, Instance> thisMatDraws = drawCalls.get(mat);
+            Multimap<SubGroup, Instance> thisMatDraws = drawCalls.get(mat);
 
             glUseProgram(mat.program.getProgramID());
             GLBuffer instanceVBO = GLBuffer.create();
@@ -59,8 +67,9 @@ public class GraphicPipeline {
 
             glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-            for (Mesh mesh : thisMatDraws.keySet()) {
-                Collection<Instance> instances = thisMatDraws.get(mesh);
+            for (SubGroup group : thisMatDraws.keySet()) {
+                Mesh mesh = group.mesh;
+                Collection<Instance> instances = thisMatDraws.get(group);
 
                 // Per-vertex data pointer
                 glBindBuffer(GL_ARRAY_BUFFER, mesh.getVBO().getID());
@@ -85,9 +94,8 @@ public class GraphicPipeline {
                 glBindBuffer(GL_ARRAY_BUFFER, 0);
 
                 // Bind IBO
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.getIBOAll().getID());
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, group.getIBO().getID());
 
-                glPointSize(3.0f);
                 glDrawElementsInstanced(GL_TRIANGLES, mesh.getIndiceCount(), GL_UNSIGNED_INT, 0, instances.size());
 
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -98,6 +106,43 @@ public class GraphicPipeline {
         }
 
         drawCalls.clear();
+    }
+
+    private class SubGroup {
+
+        final Mesh mesh;
+        final boolean all;
+        final int iboID;
+
+        SubGroup(Mesh mesh, boolean all, int iboID) {
+            this.mesh = mesh;
+            this.all = all;
+            this.iboID = iboID;
+        }
+
+        GLBuffer getIBO() {
+            return all ? mesh.getIBOAll() : mesh.getIBOSub(iboID);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            SubGroup subGroup = (SubGroup) o;
+
+            if (all != subGroup.all) return false;
+            if (iboID != subGroup.iboID) return false;
+            return mesh != null ? mesh.equals(subGroup.mesh) : subGroup.mesh == null;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = mesh != null ? mesh.hashCode() : 0;
+            result = 31 * result + (all ? 1 : 0);
+            result = 31 * result + iboID;
+            return result;
+        }
     }
 
 

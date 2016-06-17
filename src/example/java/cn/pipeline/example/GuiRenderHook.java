@@ -63,7 +63,8 @@ public class GuiRenderHook {
                 vert(.5f, 0,   0, 1, 1, 0, 0, 1)
         );
 
-        mesh.setIndices(new int[] { 2, 1, 0, 3, 2, 0 });
+        mesh.setSubIndices(0, new int[] { 2, 1, 0, 3, 2, 0 });
+        mesh.setSubIndices(1, new int[] { 2, 1, 0 });
 
         for (int i = 0; i < 1000; ++i) {
             instances.add(mat.newInstance(
@@ -89,7 +90,7 @@ public class GuiRenderHook {
 
             Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
             for (Instance i : instances) {
-                pipeline.draw(mat, mesh, i);
+                pipeline.draw(mat, mesh, i, 0);
             }
             pipeline.flush();
 
