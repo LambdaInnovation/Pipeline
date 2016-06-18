@@ -26,6 +26,8 @@ import static org.lwjgl.opengl.GL20.glUseProgram;
 
 public class GuiRenderHook {
 
+    public static boolean activated = false;
+
     private final GraphicPipeline pipeline = new GraphicPipeline();
 
     private final Material mat = Material.load(
@@ -81,7 +83,7 @@ public class GuiRenderHook {
 
     @SubscribeEvent
     public void renderOverlay(RenderGameOverlayEvent evt) {
-        if (evt.type == ElementType.CROSSHAIRS) {
+        if (activated && evt.type == ElementType.CROSSHAIRS) {
             glEnable(GL_BLEND);
             glUseProgram(mat.getProgram().getProgramID());
             glUniform1f(glGetUniformLocation(mat.getProgram().getProgramID(), "aspect"),

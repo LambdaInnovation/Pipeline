@@ -22,7 +22,7 @@ import static cn.lambdalib.pipeline.core.Utils.getResourceStream;
 import static cn.lambdalib.pipeline.core.Utils.log;
 
 /**
- * Parses obj model file into the runtime {@link IMesh}.
+ * Parses obj model file into the runtime {@link Material.Mesh}.
  */
 public class ObjParser {
 

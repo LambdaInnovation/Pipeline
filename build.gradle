@@ -30,6 +30,14 @@ minecraft {
 }
 
 dependencies {
+    compile files('libs/Pipeline-PluginLoader.jar') // Core plugin loader
+}
+
+jar {
+	manifest {
+		attributes 'FMLCorePluginContainsFMLMod' : 'true'
+		attributes 'FMLCorePlugin' : 'cn.lambdalib.pipeline.core.PipelineCorePlugin'
+	}
 }
 
 processResources
