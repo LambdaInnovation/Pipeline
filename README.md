@@ -1,25 +1,22 @@
-A experimental modern GL rendering pipeline implementation for Minecraft mods.
+A modern GL rendering pipeline implementation for Minecraft mods. Currently in early development stage.
 
-# Functionalities
+# Features
 
-1. An arbitary rendering pipeline 
-2. Support for effect rendering in world space
-3. Support for concrete object rendering in world space
-4. Support for rendering in GUI space
+1. A clean wrapper around modern GL
+2. Efficient
+3. Interface with GLSL easily
+4. Convenient support for common use cases (entity rendering, GUI rendering, etc.)
+5. Common lighting&fog effect support
+6. Support for .OBJ model format
+7. More to come...
 
-# Draft
+# Documentation
 
-- ShaderProgram
+TODO
 
-- (Generated) XXXMaterial
-  -> (Generated) XXXInstanceData - Handles and stores per-instance attribute
-  -> (Generated) XXXMesh - Handles and stores per-vertex attribute
-  - Stores uniforms
-  
-- Pipeline
-  - Accepts (Material, Mesh, InstanceData) combination and group drawcalls by calling flush()
-  
-- MCPipeline
-  - gives conventional pipelines (e.g. effect rendering)
+# Try it out!
 
-- ObjParser
+1. `gradlew setupDecompWorkspace idea/eclipse`
+2. Include the `src/example/java` and `src/example/resources` as source and resource file.
+3. Try `/plcube` `/plgui` command after starting the game.
+
