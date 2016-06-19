@@ -3,6 +3,7 @@ package cn.lambdalib.pipeline.api;
 import cn.lambdalib.pipeline.api.Material.Layout;
 
 import static org.lwjgl.opengl.GL11.GL_FLOAT;
+import static org.lwjgl.opengl.GL20.GL_FLOAT_MAT4;
 import static org.lwjgl.opengl.GL20.GL_FLOAT_VEC2;
 import static org.lwjgl.opengl.GL20.GL_FLOAT_VEC3;
 
@@ -30,7 +31,7 @@ public class Attribute {
     }
 
     public enum AttributeType {
-        Float(1), Vec2(2), Vec3(3);
+        Float(1), Vec2(2), Vec3(3), Mat4(16);
 
         public final int dimension;
 
@@ -39,6 +40,7 @@ public class Attribute {
                 case GL_FLOAT: return Float;
                 case GL_FLOAT_VEC2: return Vec2;
                 case GL_FLOAT_VEC3: return Vec3;
+                case GL_FLOAT_MAT4: return Mat4;
                 default: throw new IllegalArgumentException("type " + type + " is not supported");
             }
         }

@@ -12,9 +12,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ResourceLocation;
-import org.lwjgl.BufferUtils;
 
-import java.nio.FloatBuffer;
 import java.util.*;
 
 import static org.apache.commons.lang3.tuple.Pair.of;
@@ -51,10 +49,6 @@ public class CubeRenderer {
         l_offset = mat.getLayout("offset"),
         l_size = mat.getLayout("size"),
         l_color = mat.getLayout("color");
-
-    private final int
-        loc_pvp_matrix = glGetUniformLocation(mat.getProgram().getProgramID(), "pvp_matrix"),
-        loc_player_pos = glGetUniformLocation(mat.getProgram().getProgramID(), "player_pos");
 
     {
         final float s = 0.5f;
@@ -148,19 +142,14 @@ public class CubeRenderer {
                 cubes.add(new Cube());
             }
 
-            FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
-            evt.pvpMatrix().store(buffer);
-            buffer.flip();
-
-            glUseProgram(mat.getProgram().getProgramID());
-
-            glUniformMatrix4(loc_pvp_matrix, false, buffer);
-
-            glUniform3f(loc_player_pos,
-                    (float) RenderManager.renderPosX,
-                    (float) RenderManager.renderPosY,
-                    (float) RenderManager.renderPosZ);
-            glUseProgram(0);
+            // Update uniform
+            mat.setUniforms(
+                mat.newUniformBlock()
+                        .setVec3("player_pos", (float) RenderManager.renderPosX,
+                                (float) RenderManager.renderPosY,
+                                (float) RenderManager.renderPosZ)
+                        .setMat4("pvp_matrix", evt.pvpMatrix())
+            );
 
             for (Cube c : cubes) {
                 pipeline.draw(mat, mesh, c.toInstance());

@@ -20,7 +20,7 @@ void main() {
 
     vec3 pos = position;
     pos *= scale;
-    pos.x /= 1.6;
+    pos.x /= aspect;
 
     gl_Position = vec4(pos + offset, 0.3);
 }

@@ -20,9 +20,6 @@ import static org.apache.commons.lang3.tuple.Pair.of;
 import static cn.lambdalib.pipeline.api.Attribute.attr;
 import static org.lwjgl.opengl.GL11.GL_BLEND;
 import static org.lwjgl.opengl.GL11.glEnable;
-import static org.lwjgl.opengl.GL20.glGetUniformLocation;
-import static org.lwjgl.opengl.GL20.glUniform1f;
-import static org.lwjgl.opengl.GL20.glUseProgram;
 
 public class GuiRenderHook {
 
@@ -85,10 +82,9 @@ public class GuiRenderHook {
     public void renderOverlay(RenderGameOverlayEvent evt) {
         if (activated && evt.type == ElementType.CROSSHAIRS) {
             glEnable(GL_BLEND);
-            glUseProgram(mat.getProgram().getProgramID());
-            glUniform1f(glGetUniformLocation(mat.getProgram().getProgramID(), "aspect"),
-                    evt.resolution.getScaledWidth() / evt.resolution.getScaledHeight());
-            glUseProgram(0);
+
+            mat.setUniforms(mat.newUniformBlock().setFloat("aspect",
+                    (float) evt.resolution.getScaledWidth() / evt.resolution.getScaledHeight()));
 
             Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
             for (Instance i : instances) {

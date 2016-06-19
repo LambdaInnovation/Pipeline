@@ -3,10 +3,12 @@ package cn.lambdalib.pipeline.api;
 import cn.lambdalib.pipeline.api.Attribute.AttributeType;
 import cn.lambdalib.pipeline.core.GLBuffer;
 import cn.lambdalib.pipeline.core.Lazy;
+import cn.lambdalib.pipeline.core.Utils;
 import cn.lambdalib.pipeline.core.VAO;
 import com.google.common.base.Preconditions;
 import org.apache.commons.lang3.tuple.Pair;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.util.vector.Matrix4f;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -21,6 +23,7 @@ import java.util.function.Supplier;
 import static cn.lambdalib.pipeline.core.Utils.*;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL31.glGetActiveUniformName;
 
 public class Material {
 
@@ -35,7 +38,11 @@ public class Material {
     }
 
     final ShaderProgram program;
+
     final Map<String, Layout> layouts = new HashMap<>();
+
+    private final Map<String, Uniform> uniformLocations = new HashMap<>();
+
     final List<Layout>
         vertexLayouts = new ArrayList<>(),
         instanceLayouts = new ArrayList<>();
@@ -45,12 +52,35 @@ public class Material {
     private Material(ShaderProgram program, LayoutMapping mapping) {
         this.program = program;
 
-        int attributeCount = glGetProgrami(program.getProgramID(), GL_ACTIVE_ATTRIBUTES);
-        ByteBuffer nameBuffer = BufferUtils.createByteBuffer(
-                glGetProgrami(program.getProgramID(), GL_ACTIVE_ATTRIBUTE_MAX_LENGTH));
         IntBuffer sizeBuffer = BufferUtils.createIntBuffer(1),
                 typeBuffer = BufferUtils.createIntBuffer(1),
                 lenBuffer = BufferUtils.createIntBuffer(1);
+
+        {
+            int uniformCount = glGetProgrami(program.getProgramID(), GL_ACTIVE_UNIFORMS);
+
+            ByteBuffer nameBuffer = BufferUtils.createByteBuffer(glGetProgrami(program.getProgramID(),
+                    GL_ACTIVE_UNIFORM_MAX_LENGTH));
+
+            for (int i = 0; i < uniformCount; ++i) {
+                nameBuffer.clear();
+                typeBuffer.clear();
+                sizeBuffer.clear();
+                lenBuffer.clear();
+
+                glGetActiveUniform(program.getProgramID(), i, lenBuffer, sizeBuffer, typeBuffer, nameBuffer);
+
+                String name = toString(lenBuffer.get(), nameBuffer);
+                int location = glGetUniformLocation(program.getProgramID(), name);
+
+                uniformLocations.put(name, new Uniform(name, i));
+            }
+        }
+
+
+        int attributeCount = glGetProgrami(program.getProgramID(), GL_ACTIVE_ATTRIBUTES);
+        ByteBuffer nameBuffer = BufferUtils.createByteBuffer(
+                glGetProgrami(program.getProgramID(), GL_ACTIVE_ATTRIBUTE_MAX_LENGTH));
 
         for (int i = 0; i < attributeCount; ++i) {
             nameBuffer.clear();
@@ -60,14 +90,7 @@ public class Material {
 
             glGetActiveAttrib(program.getProgramID(), i, lenBuffer, sizeBuffer, typeBuffer, nameBuffer);
 
-            String name; {
-                StringBuilder sb = new StringBuilder();
-                int len = lenBuffer.get();
-                while (len --> 0) {
-                    sb.append((char) nameBuffer.get());
-                }
-                name = sb.toString();
-            }
+            String name = toString(lenBuffer.get(), nameBuffer);
 
             int index = glGetAttribLocation(program.getProgramID(), name);
             int type = typeBuffer.get();
@@ -100,6 +123,14 @@ public class Material {
         instanceFloats = calcFloats(instanceLayouts);
     }
 
+    private String toString(int len, ByteBuffer buffer) {
+        StringBuilder sb = new StringBuilder();
+        while (len --> 0) {
+            sb.append((char) buffer.get());
+        }
+        return sb.toString();
+    }
+
     private int calcFloats(List<Layout> list) {
         if (list.isEmpty()) {
             return 0;
@@ -121,8 +152,27 @@ public class Material {
         return new Instance(fill(LayoutType.INSTANCE, attrs));
     }
 
+    public UniformBlock newUniformBlock() {
+        return new UniformBlock();
+    }
+
     public Layout getLayout(String name) {
         return Preconditions.checkNotNull(layouts.get(name), "Layout " + name + " doesn't exist");
+    }
+
+    /**
+     * Update the uniforms in given {@link UniformBlock} into the material.
+     *  It must be created from this `Material`, otherwise the behaviour is undefined.
+     */
+    public void setUniforms(UniformBlock uniforms) {
+        glUseProgram(program.getProgramID());
+
+        for (Entry<Integer, UniformDispatcher> entry : uniforms.dispatcher.entrySet()) {
+            int index = entry.getKey();
+            entry.getValue().dispatch(index);
+        }
+
+        glUseProgram(0);
     }
 
     public ShaderProgram getProgram() {
@@ -205,6 +255,50 @@ public class Material {
                 ret.mappings.put(p.getLeft(), p.getRight());
             }
             return ret;
+        }
+
+    }
+
+    private interface UniformDispatcher {
+
+        void dispatch(int idx);
+
+    }
+
+    /**
+     * Stores uniform parameters to be uploaded to the material.
+     */
+    public class UniformBlock {
+
+        private final Map<Integer, UniformDispatcher> dispatcher = new HashMap<>();
+
+        public UniformBlock setFloat(String id, float x) {
+            dispatcher.put(index(id), idx -> glUniform1f(idx, x));
+            return this;
+        }
+
+        public UniformBlock setVec2(String id, float x, float y) {
+            dispatcher.put(index(id), idx -> glUniform2f(idx, x, y));
+            return this;
+        }
+
+        public UniformBlock setVec3(String id, float x, float y, float z) {
+            dispatcher.put(index(id), idx -> glUniform3f(idx, x, y, z));
+            return this;
+        }
+
+        public UniformBlock setMat4(String id, Matrix4f matrix) {
+            FloatBuffer buf = BufferUtils.createFloatBuffer(16);
+            matrix.store(buf);
+            buf.flip();
+
+            dispatcher.put(index(id), idx -> glUniformMatrix4(idx, false, buf));
+
+            return this;
+        }
+
+        private int index(String id) {
+            return Preconditions.checkNotNull(uniformLocations.get(id)).index;
         }
 
     }
@@ -325,6 +419,16 @@ public class Material {
 
         }
 
+    }
+
+    private class Uniform {
+        final String name;
+        final int index;
+
+        public Uniform(String name, int index) {
+            this.name = name;
+            this.index = index;
+        }
     }
 
 }
