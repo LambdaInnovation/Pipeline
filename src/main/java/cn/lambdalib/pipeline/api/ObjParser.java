@@ -1,9 +1,10 @@
 package cn.lambdalib.pipeline.api;
 
-import cn.lambdalib.pipeline.api.ObjModel.Vertex;
+import cn.lambdalib.pipeline.api.Material.Layout;
+import cn.lambdalib.pipeline.api.Material.Mesh;
+import cn.lambdalib.pipeline.api.Material.Vertex;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Collections2;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.primitives.Ints;
@@ -26,13 +27,28 @@ import static cn.lambdalib.pipeline.core.Utils.log;
  */
 public class ObjParser {
 
-    public static ObjModel parse(ResourceLocation res) {
-        return parse(new InputStreamReader(getResourceStream(res)));
+    public enum VertexAttr { Position, UV, Normal }
+
+    /**
+     * @param res The location of the texture
+     * @param material The material of the mesh.
+     * @param targetMesh The mesh to store the parsed mesh data in. The previous data will be overwritten.
+     * @param vertexMapping A map from OBJ vertex attribute to sub mesh index.
+     * @param groupMapping A map from face group to sub mesh index.
+     * @return
+     */
+    public static void parse(ResourceLocation res,
+                                 Material material, Mesh targetMesh,
+                                 Map<VertexAttr, Layout> vertexMapping,
+                                 Map<String, Integer> groupMapping) {
+        parse(new InputStreamReader(getResourceStream(res)),
+                new ObjParseTarget(material, targetMesh, vertexMapping, groupMapping));
     }
 
-    private static ObjModel parse(Reader rdr0) {
+    private static void parse(Reader rdr0, ObjParseTarget t) {
         List<Vector3f> vs = new ArrayList<>();
         List<Vector2f> vts = new ArrayList<>();
+        List<Vector3f> vns = new ArrayList<>();
         Multimap<String, ObjFace> faces = HashMultimap.create();
 
         BufferedReader rdr = new BufferedReader(rdr0);
@@ -62,16 +78,22 @@ public class ObjParser {
 
                         break;
 
+                    case "vn":
+                        vns.add(new Vector3f(scanner.nextFloat(), scanner.nextFloat(), scanner.nextFloat()));
+
+                        break;
+
                     case "g":
                         currentGroup = scanner.next();
 
                         break;
 
                     case "f":
-                        scanner.useDelimiter("[ /]");
+                        scanner.useDelimiter(" ");
                         ObjFace of = new ObjFace(
-                                scanner.nextInt()-1, scanner.nextInt()-1, scanner.nextInt()-1,
-                                scanner.nextInt()-1, scanner.nextInt()-1, scanner.nextInt()-1);
+                                new VertexIdt(scanner.next()),
+                                new VertexIdt(scanner.next()),
+                                new VertexIdt(scanner.next()));
 
                         faces.put(currentGroup,of);
 
@@ -104,14 +126,14 @@ public class ObjParser {
         Map<VertexIdt, Integer> generated = new HashMap<>();
         ArrayListMultimap<String, Integer> genFaces = ArrayListMultimap.create();
 
-        GenContext ctx = new GenContext(vs, vts, generated, vertices);
+        GenContext ctx = new GenContext(vs, vts, vns, generated, vertices, t);
 
         for (String group : faces.keySet()) {
             Collection<Integer> list = genFaces.get(group);
             for (ObjFace face : faces.get(group)) {
-                int i0 = genIndex(ctx, new VertexIdt(face.v0, face.vt0));
-                int i1 = genIndex(ctx, new VertexIdt(face.v1, face.vt1));
-                int i2 = genIndex(ctx, new VertexIdt(face.v2, face.vt2));
+                int i0 = genIndex(ctx, face.f0);
+                int i1 = genIndex(ctx, face.f1);
+                int i2 = genIndex(ctx, face.f2);
 
                 list.add(i0);
                 list.add(i1);
@@ -125,7 +147,16 @@ public class ObjParser {
             resultFaces.put(group, Ints.toArray(list));
         }
 
-        return new ObjModel(vertices.toArray(new Vertex[vertices.size()]), resultFaces);
+        Vertex[] verticesArr = new Vertex[vertices.size()];
+        vertices.toArray(verticesArr);
+        t.mesh.setVertices(verticesArr);
+
+        for (String group : resultFaces.keySet()) {
+            if (t.groupMapping.containsKey(group)) {
+                int submesh = t.groupMapping.get(group);
+                t.mesh.setSubIndices(submesh, resultFaces.get(group));
+            }
+        }
     }
 
     private static int genIndex(GenContext ctx, VertexIdt idt) {
@@ -135,65 +166,117 @@ public class ObjParser {
         } else {
             idx = ctx.vertices.size();
             ctx.generated.put(idt, ctx.vertices.size());
-            ctx.vertices.add(new Vertex(ctx.vs.get(idt.vert), ctx.vts.get(idt.tex)));
+
+            Vertex v = ctx.t.material.newVertex();
+            for (Entry<VertexAttr, Layout> entry : ctx.t.vertMapping.entrySet()) {
+                VertexAttr attr = entry.getKey();
+                Layout layout = entry.getValue();
+                switch (attr) {
+                    case Position: if (idt.vertIndex != -1) {
+                        Vector3f pos = ctx.vs.get(idt.vertIndex);
+                        v.setVec3(layout, pos.x, pos.y, pos.z);
+                    } break;
+                    case UV: if (idt.uvIndex != -1) {
+                        Vector2f uv  = ctx.vts.get(idt.uvIndex);
+                        v.setVec2(layout, uv.x, uv.y);
+                    } break;
+                    case Normal: if (idt.normalIndex != -1) {
+                        Vector3f n = ctx.vns.get(idt.normalIndex);
+                        v.setVec3(layout, n.x, n.y, n.z);
+                    } break;
+                }
+            }
+
+            ctx.vertices.add(v);
         }
 
         return idx;
     }
 
+    private static class ObjParseTarget {
+
+        public final Material material;
+        public final Mesh mesh;
+        public final Map<VertexAttr, Layout> vertMapping;
+        public final Map<String, Integer> groupMapping;
+
+        public ObjParseTarget(Material material, Mesh mesh, Map<VertexAttr, Layout> vertMapping, Map<String, Integer> groupMapping) {
+            this.material = material;
+            this.mesh = mesh;
+            this.vertMapping = vertMapping;
+            this.groupMapping = groupMapping;
+        }
+    }
+
     private static class GenContext {
         final List<Vector3f> vs;
         final List<Vector2f> vts;
+        final List<Vector3f> vns;
+
         final Map<VertexIdt, Integer> generated;
         final List<Vertex> vertices;
+        final ObjParseTarget t;
 
         public GenContext(List<Vector3f> vs, List<Vector2f> vts,
-                          Map<VertexIdt, Integer> generated, List<Vertex> vertices) {
+                          List<Vector3f> vns,
+                          Map<VertexIdt, Integer> generated,
+                          List<Vertex> vertices, ObjParseTarget t) {
             this.vs = vs;
             this.vts = vts;
+            this.vns = vns;
             this.generated = generated;
             this.vertices = vertices;
+            this.t = t;
         }
     }
 
     private static class ObjFace {
-        final int v0, v1, v2;
-        final int vt0, vt1, vt2;
+        final VertexIdt f0, f1, f2;
 
-        public ObjFace(int v0, int vt0, int v1, int vt1, int v2, int vt2) {
-            this.v0 = v0;
-            this.v1 = v1;
-            this.v2 = v2;
-            this.vt0 = vt0;
-            this.vt1 = vt1;
-            this.vt2 = vt2;
+        ObjFace(VertexIdt f0, VertexIdt f1, VertexIdt f2) {
+            this.f0 = f0;
+            this.f1 = f1;
+            this.f2 = f2;
         }
     }
 
     private static class VertexIdt {
-        final int vert, tex;
+        VertexIdt(String input) {
+            Scanner scanner = new Scanner(input);
+            scanner.useDelimiter("/");
 
-        public VertexIdt(int vert, int tex) {
-            this.vert = vert;
-            this.tex = tex;
+            vertIndex = scanner.nextInt() - 1;
+
+            if (!scanner.hasNext()) return;
+
+            String s = scanner.next();
+            if (!s.isEmpty()) {
+                uvIndex = Integer.parseInt(s) - 1;
+            }
+
+            if (!scanner.hasNextInt()) return;
+
+            normalIndex = scanner.nextInt() - 1;
         }
+
+        int vertIndex = -1;
+        int uvIndex = -1;
+        int normalIndex = -1;
+
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            VertexIdt vertexIdt = (VertexIdt) o;
-
-            if (vert != vertexIdt.vert) return false;
-            return tex == vertexIdt.tex;
-
+            VertexIdt vertex = (VertexIdt) o;
+            if (vertIndex != vertex.vertIndex) return false;
+            if (uvIndex != vertex.uvIndex) return false;
+            return normalIndex == vertex.normalIndex;
         }
 
         @Override
         public int hashCode() {
-            int result = vert;
-            result = 31 * result + tex;
+            int result = vertIndex;
+            result = 31 * result + uvIndex;
+            result = 31 * result + normalIndex;
             return result;
         }
     }

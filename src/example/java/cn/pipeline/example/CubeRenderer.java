@@ -16,7 +16,6 @@ import net.minecraft.util.ResourceLocation;
 import java.util.*;
 
 import static org.apache.commons.lang3.tuple.Pair.of;
-import static cn.lambdalib.pipeline.api.Attribute.attr;
 import static org.lwjgl.opengl.GL20.*;
 
 /**
@@ -93,11 +92,10 @@ public class CubeRenderer {
             float time = (System.currentTimeMillis() - timeOffset) / 1000.0f;
             float ry = posY + (float) Math.sin(time) * 2;
 
-            return mat.newInstance(
-                    attr(l_offset, posX, ry, posZ),
-                    attr(l_size, size + (float) Math.cos(time) * 0.5f),
-                    attr(l_color, r, g, b)
-            );
+            return mat.newInstance()
+                    .setVec3(l_offset, posX, ry, posZ)
+                    .setFloat(l_size, size + (float) Math.cos(time) * 0.5f)
+                    .setVec3(l_color, r, g, b);
         }
 
     }
@@ -115,7 +113,7 @@ public class CubeRenderer {
     }
 
     private Vertex vert(float x, float y, float z) {
-        return mat.newVertex(attr(l_position, x, y, z));
+        return mat.newVertex().setVec3(l_position, x, y, z);
     }
 
     private void addFace(List<Integer> arr, int i0, int i1, int i2, int i3) {

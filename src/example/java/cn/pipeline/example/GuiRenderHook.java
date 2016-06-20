@@ -1,6 +1,5 @@
 package cn.pipeline.example;
 
-import cn.lambdalib.pipeline.api.Attribute.AttributeType;
 import cn.lambdalib.pipeline.api.GraphicPipeline;
 import cn.lambdalib.pipeline.api.Material;
 import cn.lambdalib.pipeline.api.Material.*;
@@ -17,7 +16,6 @@ import java.util.List;
 import java.util.Random;
 
 import static org.apache.commons.lang3.tuple.Pair.of;
-import static cn.lambdalib.pipeline.api.Attribute.attr;
 import static org.lwjgl.opengl.GL11.GL_BLEND;
 import static org.lwjgl.opengl.GL11.glEnable;
 
@@ -66,16 +64,15 @@ public class GuiRenderHook {
         mesh.setSubIndices(1, new int[] { 2, 1, 0 });
 
         for (int i = 0; i < 1000; ++i) {
-            instances.add(mat.newInstance(
-                    attr(offset, rand.nextFloat() * 2 - 1, rand.nextFloat() * 2 - 1, 0),
-                    attr(scale, rand.nextFloat() * 0.5f)
-            ));
+            instances.add(mat.newInstance()
+                .setVec3(offset, rand.nextFloat() * 2 - 1, rand.nextFloat() * 2 - 1, 0)
+                .setFloat(scale, rand.nextFloat() * 0.5f));
         }
 
     }
 
     private Vertex vert(float x, float y, float z, float u, float v, float r, float g, float b) {
-        return mat.newVertex(attr(pos, x, y, z), attr(uv, u, v), attr(color, r, g, b));
+        return mat.newVertex().setVec3(pos, x, y, z).setVec2(uv, u, v).setVec3(color, r, g, b);
     }
 
     @SubscribeEvent

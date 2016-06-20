@@ -1,6 +1,5 @@
 package cn.lambdalib.pipeline.api;
 
-import cn.lambdalib.pipeline.api.Attribute.AttributeType;
 import cn.lambdalib.pipeline.core.GLBuffer;
 import cn.lambdalib.pipeline.core.Lazy;
 import cn.lambdalib.pipeline.core.Utils;
@@ -21,6 +20,7 @@ import java.util.Map.Entry;
 import java.util.function.Supplier;
 
 import static cn.lambdalib.pipeline.core.Utils.*;
+import static org.lwjgl.opengl.GL11.GL_FLOAT;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL31.glGetActiveUniformName;
@@ -49,6 +49,9 @@ public class Material {
 
     final int vertexFloats, instanceFloats;
 
+    // TEMPORARY DEBUG USAGE
+    public Runnable beforeDrawing, afterDrawing;
+
     private Material(ShaderProgram program, LayoutMapping mapping) {
         this.program = program;
 
@@ -71,7 +74,6 @@ public class Material {
                 glGetActiveUniform(program.getProgramID(), i, lenBuffer, sizeBuffer, typeBuffer, nameBuffer);
 
                 String name = toString(lenBuffer.get(), nameBuffer);
-                int location = glGetUniformLocation(program.getProgramID(), name);
 
                 uniformLocations.put(name, new Uniform(name, i));
             }
@@ -144,12 +146,12 @@ public class Material {
         return new Mesh(type);
     }
 
-    public Vertex newVertex(Attribute ...attrs) {
-        return new Vertex(fill(LayoutType.VERTEX, attrs));
+    public Vertex newVertex() {
+        return new Vertex();
     }
 
-    public Instance newInstance(Attribute ...attrs) {
-        return new Instance(fill(LayoutType.INSTANCE, attrs));
+    public Instance newInstance() {
+        return new Instance();
     }
 
     public UniformBlock newUniformBlock() {
@@ -179,28 +181,32 @@ public class Material {
         return program;
     }
 
-    private float[] fill(LayoutType type, Attribute ...attrs) {
-        float[] arr = new float[type == LayoutType.VERTEX ? vertexFloats : instanceFloats];
-        for (Attribute attr : attrs) {
-            assert attr.layout.type == type;
-
-            int padding = attr.layout.floatPadding;
-            float[] in = attr.value;
-
-            for (int i = 0; i < in.length; ++i) {
-                arr[i + padding] = in[i];
-            }
-        }
-
-        return arr;
-    }
-
     public enum LayoutType {
         VERTEX, INSTANCE
     }
 
     public enum MeshType {
         STATIC, DYNAMIC
+    }
+
+    public enum AttributeType {
+        Float(1), Vec2(2), Vec3(3), Mat4(16);
+
+        public final int dimension;
+
+        public static AttributeType fromGL(int type) {
+            switch (type) {
+                case GL_FLOAT: return Float;
+                case GL_FLOAT_VEC2: return Vec2;
+                case GL_FLOAT_VEC3: return Vec3;
+                case GL_FLOAT_MAT4: return Mat4;
+                default: throw new IllegalArgumentException("type " + type + " is not supported");
+            }
+        }
+
+        AttributeType(int dimension) {
+            this.dimension = dimension;
+        }
     }
 
     public class Layout {
@@ -224,22 +230,48 @@ public class Material {
 
     }
 
-    public class Vertex {
+    @SuppressWarnings("unchecked")
+    public class AttributeGroup<T extends AttributeGroup> {
 
         final float[] values;
+        final LayoutType type;
 
-        private Vertex(float[] values) {
-            this.values = values;
+        public AttributeGroup(int length, LayoutType type) {
+            this.values = new float[length];
+            this.type = type;
+        }
+
+        public T setFloat(Layout layout, float x) {
+            values[layout.floatPadding] = x;
+            return (T) this;
+        }
+
+        public T setVec2(Layout layout, float x, float y) {
+            values[layout.floatPadding] = x;
+            values[layout.floatPadding+1] = y;
+            return (T) this;
+        }
+
+        public T setVec3(Layout layout, float x, float y, float z) {
+            values[layout.floatPadding] = x;
+            values[layout.floatPadding+1] = y;
+            values[layout.floatPadding+2] = z;
+            return (T) this;
         }
 
     }
 
-    public class Instance {
+    public class Vertex extends AttributeGroup<Vertex> {
 
-        final float[] values;
+        public Vertex() {
+            super(vertexFloats, LayoutType.VERTEX);
+        }
+    }
 
-        private Instance(float[] values) {
-            this.values = values;
+    public class Instance extends AttributeGroup<Instance> {
+
+        public Instance() {
+            super(instanceFloats, LayoutType.INSTANCE);
         }
 
     }

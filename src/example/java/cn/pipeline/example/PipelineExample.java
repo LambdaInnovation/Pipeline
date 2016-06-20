@@ -2,10 +2,8 @@ package cn.pipeline.example;
 
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
-import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
 import net.minecraftforge.common.MinecraftForge;
@@ -17,6 +15,7 @@ public class PipelineExample {
     public void postInit(FMLPostInitializationEvent evt) {
         MinecraftForge.EVENT_BUS.register(new GuiRenderHook());
         MinecraftForge.EVENT_BUS.register(new CubeRenderer());
+        DragonRenderer.init();
     }
 
     @EventHandler

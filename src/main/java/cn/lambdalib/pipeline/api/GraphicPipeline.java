@@ -49,6 +49,10 @@ public class GraphicPipeline {
         for (Material mat : drawCalls.keySet()) {
             Multimap<SubGroup, Instance> thisMatDraws = drawCalls.get(mat);
 
+            if (mat.beforeDrawing != null) {
+                mat.beforeDrawing.run();
+            }
+
             glUseProgram(mat.program.getProgramID());
             GLBuffer instanceVBO = GLBuffer.create();
             VAO vao = VAO.create();
@@ -103,6 +107,10 @@ public class GraphicPipeline {
 
             glBindVertexArray(0);
             glUseProgram(0);
+
+            if (mat.afterDrawing != null) {
+                mat.afterDrawing.run();
+            }
         }
 
         drawCalls.clear();
