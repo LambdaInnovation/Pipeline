@@ -53,6 +53,8 @@ public class ObjParser {
 
         BufferedReader rdr = new BufferedReader(rdr0);
 
+        StrRead read = new StrRead();
+
         // Reads obj model info.
         try {
             String currentGroup = "Default";
@@ -64,36 +66,45 @@ public class ObjParser {
                     continue;
                 }
 
-                Scanner scanner = new Scanner(ln);
+                read.accept(ln);
 
-                String token = scanner.next();
+                String token = read.readUntil(' ');
                 switch (token) {
                     case "v":
-                        vs.add(new Vector3f(scanner.nextFloat(), scanner.nextFloat(), scanner.nextFloat()));
+                        float x = read.readFloat(' '),
+                                y = read.readFloat(' '),
+                                z = read.readFloat(' ');
+
+                        vs.add(new Vector3f(x, y, z));
 
                         break;
 
                     case "vt":
-                        vts.add(new Vector2f(scanner.nextFloat(), scanner.nextFloat()));
+                        x = read.readFloat(' '); y = read.readFloat(' ');
+
+                        vts.add(new Vector2f(x, y));
 
                         break;
 
                     case "vn":
-                        vns.add(new Vector3f(scanner.nextFloat(), scanner.nextFloat(), scanner.nextFloat()));
+                        x = read.readFloat(' '); y = read.readFloat(' '); z = read.readFloat(' ');
+
+                        vns.add(new Vector3f(x, y, z));
 
                         break;
 
                     case "g":
-                        currentGroup = scanner.next();
+                        currentGroup = read.readUntil(' ');
 
                         break;
 
                     case "f":
-                        scanner.useDelimiter(" ");
+                        String s0 = read.readUntil(' '), s1 = read.readUntil(' '), s2 = read.readUntil(' ');
+
                         ObjFace of = new ObjFace(
-                                new VertexIdt(scanner.next()),
-                                new VertexIdt(scanner.next()),
-                                new VertexIdt(scanner.next()));
+                                new VertexIdt(s0),
+                                new VertexIdt(s1),
+                                new VertexIdt(s2));
 
                         faces.put(currentGroup,of);
 
@@ -122,6 +133,7 @@ public class ObjParser {
         }
 
         // Convert into intermediate format
+
         List<Vertex> vertices = new ArrayList<>();
         Map<VertexIdt, Integer> generated = new HashMap<>();
         ArrayListMultimap<String, Integer> genFaces = ArrayListMultimap.create();
@@ -241,22 +253,23 @@ public class ObjParser {
     }
 
     private static class VertexIdt {
+        private static StrRead read = new StrRead();
+
         VertexIdt(String input) {
-            Scanner scanner = new Scanner(input);
-            scanner.useDelimiter("/");
+            read.accept(input);
 
-            vertIndex = scanner.nextInt() - 1;
+            vertIndex = read.readInt('/') - 1;
 
-            if (!scanner.hasNext()) return;
+            if (read.isEOF()) return;
 
-            String s = scanner.next();
+            String s = read.readUntil('/');
             if (!s.isEmpty()) {
                 uvIndex = Integer.parseInt(s) - 1;
             }
 
-            if (!scanner.hasNextInt()) return;
+            if (read.isEOF()) return;
 
-            normalIndex = scanner.nextInt() - 1;
+            normalIndex = read.readInt('/') - 1;
         }
 
         int vertIndex = -1;
@@ -279,6 +292,53 @@ public class ObjParser {
             result = 31 * result + normalIndex;
             return result;
         }
+    }
+
+    /**
+     * Replacement for Reader with minimum allocation and maximum reading speed
+     */
+    private static class StrRead {
+
+        String str = null;
+        int ptr = 0;
+
+        public void accept(String str) {
+            this.str = str;
+            ptr = 0;
+        }
+
+        public String readUntil(char delim) {
+            int begin = ptr;
+
+            while (ptr < str.length() && str.charAt(ptr) != delim) {
+                ++ptr;
+            }
+
+            String ret = str.substring(begin, ptr);
+
+            ++ptr; // Skip the delimeter
+
+            return ret;
+        }
+
+        public int readInt(char delim) {
+            return Integer.parseInt(readUntil(delim));
+        }
+
+        public float readFloat(char delim) {
+            return Float.parseFloat(readUntil(delim));
+        }
+
+        public void skip(char ch) {
+            while (ptr < str.length() && str.charAt(ptr) == ch) {
+                ++ptr;
+            }
+        }
+
+        public boolean isEOF() {
+            return ptr >= str.length();
+        }
+
     }
 
 }
