@@ -36,7 +36,7 @@ dependencies {
 jar {
 	manifest {
 		attributes 'FMLCorePluginContainsFMLMod' : 'true'
-		attributes 'FMLCorePlugin' : 'cn.lambdalib.pipeline.core.PipelineCorePlugin'
+		attributes 'FMLCorePlugin' : 'cn.pipeline.core.PipelineCorePlugin'
 	}
 }
 

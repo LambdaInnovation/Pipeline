@@ -1,8 +1,8 @@
-package cn.lambdalib.pipeline.api;
+package cn.pipeline.api;
 
-import cn.lambdalib.pipeline.api.state.StateContext;
-import cn.lambdalib.pipeline.core.GLBuffer;
-import cn.lambdalib.pipeline.core.Lazy;
+import cn.pipeline.api.state.StateContext;
+import cn.pipeline.core.GLBuffer;
+import cn.pipeline.core.Lazy;
 import com.google.common.base.Preconditions;
 import org.apache.commons.lang3.tuple.Pair;
 import org.lwjgl.BufferUtils;

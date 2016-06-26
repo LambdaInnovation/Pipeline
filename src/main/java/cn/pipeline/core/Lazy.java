@@ -1,4 +1,4 @@
-package cn.lambdalib.pipeline.core;
+package cn.pipeline.core;
 
 import java.util.function.Supplier;
 

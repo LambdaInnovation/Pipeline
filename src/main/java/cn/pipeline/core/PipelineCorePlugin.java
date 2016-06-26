@@ -1,4 +1,4 @@
-package cn.lambdalib.pipeline.core;
+package cn.pipeline.core;
 
 import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
 
@@ -14,7 +14,7 @@ public class PipelineCorePlugin implements IFMLLoadingPlugin {
 
     @Override
     public String[] getASMTransformerClass() {
-        return new String[] { "cn.lambdalib.pipeline.core.PipelineTransformer" };
+        return new String[] { "cn.pipeline.core.PipelineTransformer" };
     }
 
     @Override

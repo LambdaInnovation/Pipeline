@@ -1,10 +1,10 @@
 package cn.pipeline.example;
 
-import cn.lambdalib.pipeline.api.GraphicPipeline;
-import cn.lambdalib.pipeline.api.Material;
-import cn.lambdalib.pipeline.api.Material.*;
-import cn.lambdalib.pipeline.api.ShaderProgram;
-import cn.lambdalib.pipeline.core.Utils;
+import cn.pipeline.api.GraphicPipeline;
+import cn.pipeline.api.Material;
+import cn.pipeline.api.Material.*;
+import cn.pipeline.api.ShaderProgram;
+import cn.pipeline.core.Utils;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.ResourceLocation;

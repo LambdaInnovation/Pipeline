@@ -1,7 +1,7 @@
-package cn.lambdalib.pipeline.api;
+package cn.pipeline.api;
 
-import cn.lambdalib.pipeline.api.ProgramCreationException.ErrorType;
-import cn.lambdalib.pipeline.core.Utils;
+import cn.pipeline.api.ProgramCreationException.ErrorType;
+import cn.pipeline.core.Utils;
 import com.google.common.base.Throwables;
 import net.minecraft.util.ResourceLocation;
 import org.apache.commons.io.IOUtils;

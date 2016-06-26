@@ -1,12 +1,12 @@
-package cn.lambdalib.pipeline.api;
+package cn.pipeline.api;
 
 
-import cn.lambdalib.pipeline.api.Material.Instance;
-import cn.lambdalib.pipeline.api.Material.Layout;
-import cn.lambdalib.pipeline.api.Material.Mesh;
-import cn.lambdalib.pipeline.api.state.StateContext;
-import cn.lambdalib.pipeline.core.GLBuffer;
-import cn.lambdalib.pipeline.core.VAO;
+import cn.pipeline.api.Material.Instance;
+import cn.pipeline.api.Material.Layout;
+import cn.pipeline.api.Material.Mesh;
+import cn.pipeline.api.state.StateContext;
+import cn.pipeline.core.GLBuffer;
+import cn.pipeline.core.VAO;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import org.lwjgl.BufferUtils;

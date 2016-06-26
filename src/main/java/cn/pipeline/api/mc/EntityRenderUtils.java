@@ -1,7 +1,6 @@
-package cn.lambdalib.pipeline.api.mc;
+package cn.pipeline.api.mc;
 
-import cn.lambdalib.pipeline.core.RenderEventDispatch;
-import cn.lambdalib.pipeline.core.Utils;
+import cn.pipeline.core.RenderEventDispatch;
 import org.lwjgl.util.vector.Matrix4f;
 
 /**

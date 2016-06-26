@@ -1,7 +1,6 @@
-package cn.lambdalib.pipeline.api.mc.event;
+package cn.pipeline.api.mc.event;
 
-import cn.lambdalib.pipeline.api.mc.EntityRenderUtils;
-import cn.lambdalib.pipeline.core.Utils;
+import cn.pipeline.api.mc.EntityRenderUtils;
 import cpw.mods.fml.common.eventhandler.Event;
 import org.lwjgl.util.vector.Matrix4f;
 

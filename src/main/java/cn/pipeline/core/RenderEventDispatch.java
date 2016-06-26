@@ -1,7 +1,7 @@
-package cn.lambdalib.pipeline.core;
+package cn.pipeline.core;
 
-import cn.lambdalib.pipeline.api.GraphicPipeline;
-import cn.lambdalib.pipeline.api.mc.event.RenderAllEntityEvent;
+import cn.pipeline.api.GraphicPipeline;
+import cn.pipeline.api.mc.event.RenderAllEntityEvent;
 import net.minecraftforge.client.MinecraftForgeClient;
 import net.minecraftforge.common.MinecraftForge;
 import org.lwjgl.BufferUtils;

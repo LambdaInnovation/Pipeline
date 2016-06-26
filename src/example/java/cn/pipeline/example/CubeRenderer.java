@@ -1,11 +1,11 @@
 package cn.pipeline.example;
 
-import cn.lambdalib.pipeline.api.GraphicPipeline;
-import cn.lambdalib.pipeline.api.Material;
-import cn.lambdalib.pipeline.api.Material.*;
-import cn.lambdalib.pipeline.api.ShaderProgram;
-import cn.lambdalib.pipeline.api.mc.MCPipeline;
-import cn.lambdalib.pipeline.api.mc.event.RenderAllEntityEvent;
+import cn.pipeline.api.GraphicPipeline;
+import cn.pipeline.api.Material;
+import cn.pipeline.api.Material.*;
+import cn.pipeline.api.ShaderProgram;
+import cn.pipeline.api.mc.MCPipeline;
+import cn.pipeline.api.mc.event.RenderAllEntityEvent;
 import com.google.common.primitives.Ints;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import net.minecraft.client.Minecraft;
@@ -16,7 +16,6 @@ import net.minecraft.util.ResourceLocation;
 import java.util.*;
 
 import static org.apache.commons.lang3.tuple.Pair.of;
-import static org.lwjgl.opengl.GL20.*;
 
 /**
  * An example for manually injecting into entity rendering pipeline.

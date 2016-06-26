@@ -1,8 +1,9 @@
-package cn.lambdalib.pipeline.api;
+package cn.pipeline.api;
 
-import cn.lambdalib.pipeline.api.Material.Layout;
-import cn.lambdalib.pipeline.api.Material.Mesh;
-import cn.lambdalib.pipeline.api.Material.Vertex;
+import cn.pipeline.api.Material.Layout;
+import cn.pipeline.api.Material.Mesh;
+import cn.pipeline.api.Material.Vertex;
+import cn.pipeline.core.Utils;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
@@ -18,9 +19,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.*;
 import java.util.Map.Entry;
-
-import static cn.lambdalib.pipeline.core.Utils.getResourceStream;
-import static cn.lambdalib.pipeline.core.Utils.log;
 
 /**
  * Parses obj model file into the runtime {@link Material.Mesh}.
@@ -41,7 +39,7 @@ public class ObjParser {
                                  Material material, Mesh targetMesh,
                                  Map<VertexAttr, Layout> vertexMapping,
                                  Map<String, Integer> groupMapping) {
-        parse(new InputStreamReader(getResourceStream(res)),
+        parse(new InputStreamReader(Utils.getResourceStream(res)),
                 new ObjParseTarget(material, targetMesh, vertexMapping, groupMapping));
     }
 
@@ -115,7 +113,7 @@ public class ObjParser {
                         break;
 
                     default:
-                        log.info("Unknown token " + token);
+                        Utils.log.info("Unknown token " + token);
 
                         break;
                 }

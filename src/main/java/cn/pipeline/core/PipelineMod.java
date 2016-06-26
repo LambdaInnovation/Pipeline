@@ -1,4 +1,4 @@
-package cn.lambdalib.pipeline.core;
+package cn.pipeline.core;
 
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.event.FMLInitializationEvent;

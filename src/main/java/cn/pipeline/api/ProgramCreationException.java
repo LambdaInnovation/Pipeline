@@ -1,4 +1,4 @@
-package cn.lambdalib.pipeline.api;
+package cn.pipeline.api;
 
 /**
  * An exception representing error when compiling shader.

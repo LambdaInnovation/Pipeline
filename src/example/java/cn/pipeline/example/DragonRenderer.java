@@ -1,21 +1,19 @@
 package cn.pipeline.example;
 
-import cn.lambdalib.pipeline.api.GraphicPipeline;
-import cn.lambdalib.pipeline.api.Material;
-import cn.lambdalib.pipeline.api.Material.*;
-import cn.lambdalib.pipeline.api.ObjParser;
-import cn.lambdalib.pipeline.api.ObjParser.VertexAttr;
-import cn.lambdalib.pipeline.api.ShaderProgram;
-import cn.lambdalib.pipeline.api.mc.EntityRenderUtils;
-import cn.lambdalib.pipeline.api.mc.MCPipeline;
-import cn.lambdalib.pipeline.api.state.StateContext;
-import cn.lambdalib.pipeline.api.state.StateContext.BlendFunction;
-import cn.lambdalib.pipeline.api.state.StateContext.CullFaceMode;
+import cn.pipeline.api.GraphicPipeline;
+import cn.pipeline.api.Material;
+import cn.pipeline.api.Material.*;
+import cn.pipeline.api.ObjParser;
+import cn.pipeline.api.ObjParser.VertexAttr;
+import cn.pipeline.api.ShaderProgram;
+import cn.pipeline.api.mc.EntityRenderUtils;
+import cn.pipeline.api.mc.MCPipeline;
+import cn.pipeline.api.state.StateContext;
+import cn.pipeline.api.state.StateContext.BlendFunction;
 import cpw.mods.fml.client.registry.ClientRegistry;
 import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.block.Block;
 import net.minecraft.block.ITileEntityProvider;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.tileentity.TileEntity;
@@ -27,9 +25,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.apache.commons.lang3.tuple.Pair.of;
-import static org.lwjgl.opengl.GL11.GL_CULL_FACE;
-import static org.lwjgl.opengl.GL11.glDisable;
-import static org.lwjgl.opengl.GL11.glEnable;
 
 public class DragonRenderer {
 

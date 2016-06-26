@@ -1,4 +1,4 @@
-package cn.lambdalib.pipeline.core;
+package cn.pipeline.core;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;

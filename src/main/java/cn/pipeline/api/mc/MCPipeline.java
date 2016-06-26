@@ -1,12 +1,9 @@
-package cn.lambdalib.pipeline.api.mc;
+package cn.pipeline.api.mc;
 
-import cn.lambdalib.pipeline.api.GraphicPipeline;
-import cn.lambdalib.pipeline.core.RenderEventDispatch;
+import cn.pipeline.api.GraphicPipeline;
+import cn.pipeline.core.RenderEventDispatch;
 import com.google.common.base.Preconditions;
-import cpw.mods.fml.client.FMLClientHandler;
 import net.minecraftforge.client.MinecraftForgeClient;
-
-import static cn.lambdalib.pipeline.core.Utils.*;
 
 /**
  * Common graphic pipelines that injects into Minecraft rendering procedure.
