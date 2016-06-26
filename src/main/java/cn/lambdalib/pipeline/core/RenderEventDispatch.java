@@ -9,9 +9,7 @@ import org.lwjgl.util.vector.Matrix4f;
 
 import java.nio.FloatBuffer;
 
-import static org.lwjgl.opengl.GL11.GL_MODELVIEW_MATRIX;
-import static org.lwjgl.opengl.GL11.GL_PROJECTION_MATRIX;
-import static org.lwjgl.opengl.GL11.glGetFloat;
+import static org.lwjgl.opengl.GL11.*;
 
 /**
  * Internal class don't touch or use!
@@ -44,6 +42,11 @@ public class RenderEventDispatch {
 
     public static void endRenderEntities(float partialTicks) {
         entityPipeline.flush();
+
+        // Restore GL states
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+
     }
 
     //

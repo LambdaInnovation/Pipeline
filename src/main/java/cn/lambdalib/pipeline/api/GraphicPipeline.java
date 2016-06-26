@@ -3,8 +3,8 @@ package cn.lambdalib.pipeline.api;
 
 import cn.lambdalib.pipeline.api.Material.Instance;
 import cn.lambdalib.pipeline.api.Material.Layout;
-import cn.lambdalib.pipeline.api.Material.LayoutType;
 import cn.lambdalib.pipeline.api.Material.Mesh;
+import cn.lambdalib.pipeline.api.state.StateContext;
 import cn.lambdalib.pipeline.core.GLBuffer;
 import cn.lambdalib.pipeline.core.VAO;
 import com.google.common.collect.ArrayListMultimap;
@@ -29,12 +29,21 @@ public class GraphicPipeline {
 
     private Map<Material, Multimap<SubGroup, Instance>> drawCalls = new HashMap<>();
 
+    private final StateContext context = new StateContext();
+
     public void draw(Material mat, Mesh mesh, Instance instance) {
         put(mat, new SubGroup(mesh, true, -1), instance);
     }
 
     public void draw(Material mat, Mesh mesh, Instance instance, int subMeshIndex) {
         put(mat, new SubGroup(mesh, false, subMeshIndex), instance);
+    }
+
+    /**
+     * @return The state context that will serve as the default value when this pipeline {@link #flush}s.
+     */
+    public StateContext stateContext() {
+        return context;
     }
 
     private void put(Material mat, SubGroup group, Instance instance) {
@@ -47,13 +56,15 @@ public class GraphicPipeline {
 
     public void flush() {
         for (Material mat : drawCalls.keySet()) {
+            glUseProgram(mat.program.getProgramID());
+            // --------- Update states and uniforms -----------
+            context.apply();
+            mat.stateContext().apply();
+            mat.updateUniforms();
+            // -------------------------------------------------
+
             Multimap<SubGroup, Instance> thisMatDraws = drawCalls.get(mat);
 
-            if (mat.beforeDrawing != null) {
-                mat.beforeDrawing.run();
-            }
-
-            glUseProgram(mat.program.getProgramID());
             GLBuffer instanceVBO = GLBuffer.create();
             VAO vao = VAO.create();
             glBindVertexArray(vao.getID());
@@ -107,10 +118,6 @@ public class GraphicPipeline {
 
             glBindVertexArray(0);
             glUseProgram(0);
-
-            if (mat.afterDrawing != null) {
-                mat.afterDrawing.run();
-            }
         }
 
         drawCalls.clear();

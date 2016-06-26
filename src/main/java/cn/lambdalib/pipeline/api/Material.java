@@ -1,9 +1,8 @@
 package cn.lambdalib.pipeline.api;
 
+import cn.lambdalib.pipeline.api.state.StateContext;
 import cn.lambdalib.pipeline.core.GLBuffer;
 import cn.lambdalib.pipeline.core.Lazy;
-import cn.lambdalib.pipeline.core.Utils;
-import cn.lambdalib.pipeline.core.VAO;
 import com.google.common.base.Preconditions;
 import org.apache.commons.lang3.tuple.Pair;
 import org.lwjgl.BufferUtils;
@@ -19,19 +18,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
 
-import static cn.lambdalib.pipeline.core.Utils.*;
 import static org.lwjgl.opengl.GL11.GL_FLOAT;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
-import static org.lwjgl.opengl.GL31.glGetActiveUniformName;
 
 public class Material {
 
     /**
      * <p>
-     * Create a material from given `ShaderProgram`. The Material shall
-     *  own the program, and any modification to the program's execution environment
-     *  (e.g. uniforms) without using this `Material` yields undefined results. </p>
+     * Create a material from given `ShaderProgram`. </p>
      */
     public static Material load(ShaderProgram program, LayoutMapping mapping) {
         return new Material(program, mapping);
@@ -43,14 +38,16 @@ public class Material {
 
     private final Map<String, Uniform> uniformLocations = new HashMap<>();
 
+    private final StateContext context = new StateContext();
+
     final List<Layout>
         vertexLayouts = new ArrayList<>(),
         instanceLayouts = new ArrayList<>();
 
     final int vertexFloats, instanceFloats;
 
-    // TEMPORARY DEBUG USAGE
-    public Runnable beforeDrawing, afterDrawing;
+    UniformBlock uniforms;
+    boolean uniformsChanged = false;
 
     private Material(ShaderProgram program, LayoutMapping mapping) {
         this.program = program;
@@ -163,18 +160,25 @@ public class Material {
     }
 
     /**
-     * Update the uniforms in given {@link UniformBlock} into the material.
-     *  It must be created from this `Material`, otherwise the behaviour is undefined.
+     * Update the uniforms in given {@link UniformBlock} into the material. The uploading process will take effect
+     *  just before the next time this material is used to render.
      */
     public void setUniforms(UniformBlock uniforms) {
-        glUseProgram(program.getProgramID());
+        this.uniforms = uniforms;
+        this.uniformsChanged = true;
+    }
 
-        for (Entry<Integer, UniformDispatcher> entry : uniforms.dispatcher.entrySet()) {
-            int index = entry.getKey();
-            entry.getValue().dispatch(index);
+    void updateUniforms() {
+        if (uniforms != null && uniformsChanged) {
+            for (Entry<Integer, UniformDispatcher> entry : uniforms.dispatcher.entrySet()) {
+                int index = entry.getKey();
+                entry.getValue().dispatch(index);
+            }
         }
+    }
 
-        glUseProgram(0);
+    public StateContext stateContext() {
+        return context;
     }
 
     public ShaderProgram getProgram() {

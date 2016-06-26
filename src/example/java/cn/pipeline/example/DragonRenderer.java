@@ -8,6 +8,9 @@ import cn.lambdalib.pipeline.api.ObjParser.VertexAttr;
 import cn.lambdalib.pipeline.api.ShaderProgram;
 import cn.lambdalib.pipeline.api.mc.EntityRenderUtils;
 import cn.lambdalib.pipeline.api.mc.MCPipeline;
+import cn.lambdalib.pipeline.api.state.StateContext;
+import cn.lambdalib.pipeline.api.state.StateContext.BlendFunction;
+import cn.lambdalib.pipeline.api.state.StateContext.CullFaceMode;
 import cpw.mods.fml.client.registry.ClientRegistry;
 import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.block.Block;
@@ -69,14 +72,10 @@ public class DragonRenderer {
                 ObjParser.parse(new ResourceLocation("pipex:models/dragon.obj"), material, mesh, vertexMapping, groupMapping);
                 System.out.println("Took " + (System.currentTimeMillis() - time0) + " ms parsing obj file.");
 
-                material.beforeDrawing = () -> {
-                    glDisable(GL_CULL_FACE);
-                    Minecraft.getMinecraft().getTextureManager().bindTexture(tex);
-                };
-
-                material.afterDrawing = () -> {
-                    glEnable(GL_CULL_FACE);
-                };
+                StateContext ctx = material.stateContext();
+                ctx.setTexBinding2D(0, tex);
+                ctx.setBlendEnabled(true);
+                ctx.setBlendFunc(BlendFunction.SrcAlpha, BlendFunction.One);
             }
 
             @Override
